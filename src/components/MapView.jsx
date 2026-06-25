@@ -131,15 +131,23 @@ export default function MapView({ mapPoints, aboveRef }) {
       {/* Detail popup */}
       {selected && (
         <div className="map-detail-card">
-          <h3>{selected.fsa}</h3>
-          <div><b>{fmt(selected.total)}</b> · {selected.count.toLocaleString()} donations</div>
-          <div style={{ color: PARTY_COLORS[selected.top_party] || '#888', fontWeight: 600, marginBottom: 8 }}>
-            ▶ {selected.top_party}
+          <div className="map-detail-top">
+            <span className="map-detail-fsa">{selected.fsa}</span>
+            <div className="map-detail-totals">
+              <span className="map-detail-amount">{fmt(selected.total)}</span>
+              <span className="map-detail-count">{selected.count.toLocaleString()} donations</span>
+            </div>
+            <button className="map-detail-close" onClick={() => setSelected(null)}>×</button>
           </div>
-          {Object.entries(selected.parties).slice(0, 5).map(([p, v]) => (
-            <div key={p} style={{ color: PARTY_COLORS[p] || '#888' }}>{p}: {fmt(v)}</div>
-          ))}
-          <div className="map-detail-close" onClick={() => setSelected(null)}>CLOSE ×</div>
+          <div className="map-detail-parties">
+            {Object.entries(selected.parties).slice(0, 6).map(([p, v]) => (
+              <div key={p} className="map-detail-pill">
+                <div className="map-detail-dot" style={{ background: PARTY_COLORS[p] || '#888' }} />
+                <span style={{ color: PARTY_COLORS[p] || '#888' }}>{p}</span>
+                <span className="map-detail-pill-amt">{fmt(v)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

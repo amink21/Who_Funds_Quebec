@@ -77,20 +77,41 @@ body { background: var(--ink); color: var(--ink); font-family: 'Inter', sans-ser
   z-index: 1000;
   background: var(--paper);
   border: 2px solid var(--ink);
-  padding: 14px 18px;
-  min-width: 190px; max-width: 230px;
+  min-width: 200px; max-width: 250px;
   font-family: 'DM Mono', monospace;
-  font-size: 12px; line-height: 1.8;
   pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
-.map-detail-card h3 {
+.map-detail-top {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--subtle);
+}
+.map-detail-fsa {
   font-family: 'Libre Baskerville', serif;
-  font-size: 16px; font-weight: 700; margin-bottom: 6px;
+  font-size: 22px; font-weight: 700; line-height: 1; flex-shrink: 0;
 }
+.map-detail-totals {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+}
+.map-detail-amount { font-size: 13px; font-weight: 700; line-height: 1; }
+.map-detail-count  { font-size: 10px; color: var(--muted); line-height: 1; }
 .map-detail-close {
-  margin-top: 10px; cursor: pointer; color: var(--muted);
-  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  background: none; border: none; cursor: pointer;
+  font-size: 22px; line-height: 1; color: var(--muted);
+  padding: 0; flex-shrink: 0;
 }
+.map-detail-close:hover { color: var(--ink); }
+.map-detail-parties {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 8px 12px 10px;
+}
+.map-detail-pill {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; line-height: 1;
+}
+.map-detail-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.map-detail-pill-amt { color: var(--muted); }
 
 /* MAP LEGEND BAR */
 .map-legend-bar {
@@ -231,23 +252,27 @@ body { background: var(--ink); color: var(--ink); font-family: 'Inter', sans-ser
 
 /* ── PHONE (≤ 480px) ──────────────────────────────────────── */
 @media (max-width: 480px) {
-  .masthead { padding: 16px 14px 14px; }
-  .eyebrow { font-size: 8px; letter-spacing: 2px; margin-bottom: 6px; }
-  .masthead-sub { font-size: 9px; letter-spacing: 0; }
+  /* Masthead — very tight, single visual line */
+  .masthead { padding: 10px 14px; }
+  .eyebrow { font-size: 7px; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .masthead h1 { font-size: clamp(20px, 6.5vw, 28px); margin-bottom: 0; letter-spacing: -1px; }
+  .masthead-sub { display: none; }
 
+  /* Ticker — thin strip */
+  .ticker { padding: 5px 0; }
   .ticker-inner { font-size: 10px; }
 
-  .stats-bar { grid-template-columns: 1fr 1fr; }
-  .stat-cell { padding: 12px 10px; }
+  /* Stats — single horizontal row, all 4 stats side by side */
+  .stats-bar { grid-template-columns: repeat(4, 1fr); }
+  .stat-cell { padding: 8px 4px; }
+  .stat-cell:nth-child(2) { border-right: 1px solid var(--ink); } /* override tablet reset */
+  .stat-num { font-size: clamp(13px, 3.8vw, 17px); margin-bottom: 2px; }
+  .stat-label { font-size: 7px; letter-spacing: 1px; }
 
-  .insights { grid-template-columns: 1fr; }
-  .insight { padding: 14px; border-right: none; border-bottom: 1px solid var(--ink); }
-  .insight:last-child { border-bottom: none; }
-  .insight-num { font-size: 26px; margin-bottom: 4px; }
-  .insight-label { font-size: 12px; }
-  .insight-desc { font-size: 11px; }
+  /* Insight cards — hidden on phone (saves ~200px; duplicates stats bar) */
+  .insights { display: none; }
 
-  .nav-tab { padding: 11px 14px; font-size: 9px; letter-spacing: 1px; }
+  .nav-tab { padding: 9px 12px; font-size: 9px; letter-spacing: 1px; }
 
   .section { padding: 16px 14px; }
   .section-label { font-size: 9px; letter-spacing: 2px; margin-bottom: 12px; }
@@ -273,18 +298,23 @@ body { background: var(--ink); color: var(--ink); font-family: 'Inter', sans-ser
   .footer-l { font-size: 9px; }
   .footer-r { font-size: 11px; }
 
-  /* Map detail card — full-width bottom sheet on phone */
+  /* Map detail card — compact bottom strip on phone */
   .map-detail-card {
-    top: auto;
-    right: 0; left: 0;
-    bottom: 36px; /* sit above legend bar */
+    top: auto; right: 0; left: 0;
+    bottom: 32px; /* sit above legend bar */
     max-width: 100%; min-width: 0;
-    max-height: 44vh;
-    overflow-y: auto;
-    border-top: 2px solid var(--ink);
-    border-left: none; border-right: none; border-bottom: none;
-    padding: 12px 16px;
-    font-size: 13px;
+    border: none; border-top: 2px solid var(--ink);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+  }
+  .map-detail-top { padding: 8px 12px 6px; }
+  .map-detail-fsa { font-size: 17px; }
+  .map-detail-amount { font-size: 12px; }
+  .map-detail-parties {
+    padding: 4px 12px 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 14px;
   }
 
   /* Compact legend on phone — dots only, no text labels */
