@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { LanguageProvider } from './context/LanguageContext'
 import Masthead from './components/Masthead'
 import Ticker from './components/Ticker'
 import StatsBar from './components/StatsBar'
@@ -57,6 +58,7 @@ export default function App() {
   )
 
   return (
+    <LanguageProvider>
     <>
       <div ref={aboveMapRef}>
         <Masthead />
@@ -81,5 +83,6 @@ export default function App() {
       </div>
       {activeTab !== 'map' && <Footer />}
     </>
+    </LanguageProvider>
   )
 }

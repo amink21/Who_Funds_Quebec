@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Fuse from 'fuse.js'
 import { fmt } from '../utils/formatMoney'
+import { useLang } from '../context/LanguageContext'
 
 export default function SearchView() {
+  const { t } = useLang()
   const [query, setQuery]       = useState('')
   const [results, setResults]   = useState([])
   const [status, setStatus]     = useState('idle') // idle | loading | ready | error
@@ -12,7 +14,7 @@ export default function SearchView() {
     setStatus('loading')
     fetch('/search_donors.json')
       .then(r => {
-        if (!r.ok) throw new Error('search_donors.json not found')
+        if (!r.ok) throw new Error('not found')
         return r.json()
       })
       .then(donors => {
@@ -41,23 +43,23 @@ export default function SearchView() {
   return (
     <>
       <div className="search-wrap">
-        <div className="search-label">Search any donor</div>
+        <div className="search-label">{t.search.label}</div>
         <input
           className="search-input"
           type="text"
-          placeholder="Type a name, e.g. Tremblay..."
+          placeholder={t.search.placeholder}
           value={query}
           onChange={handleSearch}
           disabled={status === 'loading'}
         />
         {status === 'loading' && (
           <div style={{ marginTop: 10, fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6b6b6b', letterSpacing: '1px' }}>
-            LOADING DONOR DATABASE...
+            {t.search.loading}
           </div>
         )}
         {status === 'error' && (
           <div style={{ marginTop: 10, fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#c0392b' }}>
-            Donor search is unavailable — the search index was not included in this deployment.
+            {t.search.error}
           </div>
         )}
         <div className="search-results">
@@ -70,20 +72,18 @@ export default function SearchView() {
           ))}
           {query.length >= 2 && results.length === 0 && status === 'ready' && (
             <div style={{ fontSize: 12, color: '#888', padding: '8px 0', fontFamily: 'DM Mono, monospace' }}>
-              No donors found for &ldquo;{query}&rdquo;
+              {t.search.noResults} &ldquo;{query}&rdquo;
             </div>
           )}
         </div>
       </div>
 
       <div className="section" style={{ border: 'none', padding: '28px' }}>
-        <div className="section-label">How to use</div>
+        <div className="section-label">{t.search.howToUse}</div>
         <p style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.8, maxWidth: 600 }}>
-          Search any Quebec resident&rsquo;s name to see their political donation history across both provincial and
-          municipal parties. All data is public record under Quebec&rsquo;s Election Act. Names, amounts, cities,
-          and parties are all disclosed.
+          {t.search.howToDesc}
           <br /><br />
-          Try searching: <strong>Tremblay</strong>, <strong>Gagnon</strong>, <strong>Roy</strong>, <strong>Bouchard</strong>
+          {t.search.trySearcing} <strong>Tremblay</strong>, <strong>Gagnon</strong>, <strong>Roy</strong>, <strong>Bouchard</strong>
         </p>
       </div>
     </>

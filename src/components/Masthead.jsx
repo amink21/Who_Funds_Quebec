@@ -1,9 +1,19 @@
+import { useLang } from '../context/LanguageContext'
+
 export default function Masthead() {
+  const { lang, setLang, t } = useLang()
   return (
     <div className="masthead">
-      <div className="eyebrow">Élections Québec · Public Donor Registry · 2019–2026</div>
-      <h1>Who Funds <em>Québec?</em></h1>
-      <div className="masthead-sub">289,374 donations &nbsp;·&nbsp; $30,383,214 &nbsp;·&nbsp; 108,216 donors &nbsp;·&nbsp; 7 years of data</div>
+      <button
+        className="lang-toggle"
+        onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
+        aria-label="Switch language"
+      >
+        {t.masthead.toggle}
+      </button>
+      <div className="eyebrow">{t.masthead.eyebrow}</div>
+      <h1>{t.masthead.titleMain} <em>{t.masthead.titleEm}</em></h1>
+      <div className="masthead-sub">{t.masthead.sub}</div>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { fmt } from '../utils/formatMoney'
+import { useLang } from '../context/LanguageContext'
 
 export default function StatsBar({ summary }) {
+  const { t } = useLang()
   const totalDonations = summary?.total_donations?.toLocaleString() ?? '289,374'
   const totalAmount    = summary ? fmt(summary.total_amount) : '$30.4M'
   const uniqueDonors   = summary?.unique_donors?.toLocaleString() ?? '108,216'
@@ -10,19 +12,19 @@ export default function StatsBar({ summary }) {
     <div className="stats-bar">
       <div className="stat-cell">
         <div className="stat-num">{totalAmount}</div>
-        <div className="stat-label">Total Donated</div>
+        <div className="stat-label">{t.stats.totalDonated}</div>
       </div>
       <div className="stat-cell">
         <div className="stat-num">{totalDonations}</div>
-        <div className="stat-label">Donations</div>
+        <div className="stat-label">{t.stats.donations}</div>
       </div>
       <div className="stat-cell">
         <div className="stat-num">{uniqueDonors}</div>
-        <div className="stat-label">Unique Donors</div>
+        <div className="stat-label">{t.stats.uniqueDonors}</div>
       </div>
       <div className="stat-cell">
         <div className="stat-num">{yearRange}</div>
-        <div className="stat-label">7 Years of Data</div>
+        <div className="stat-label">{t.stats.years}</div>
       </div>
     </div>
   )

@@ -1,12 +1,11 @@
+import { useLang } from '../context/LanguageContext'
+
 export default function Footer() {
+  const { t } = useLang()
   return (
     <div className="footer">
-      <div className="footer-l">
-        Source: Élections Québec · Public Donor Registry · CC-BY &nbsp;·&nbsp; Data: 2019–2026
-      </div>
-      <div className="footer-r">
-        All contributions are public record under Quebec&rsquo;s Election Act
-      </div>
+      <div className="footer-l">{t.footer.left}</div>
+      <div className="footer-r">{t.footer.right}</div>
     </div>
   )
 }

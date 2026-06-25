@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PARTY_COLORS } from '../utils/partyColors'
 import { fmt } from '../utils/formatMoney'
+import { useLang } from '../context/LanguageContext'
 
 const TOKEN = 'eyJraWQiOiJZTUtZUVJBVTVOIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJaMldDMktLOTZYIiwiaWF0IjoxNzgyNDAyNTk3LCJzY29wZSI6Im1hcGtpdF9qcyIsImV4cCI6MTc4MzA2MTk5OX0.u-l0S30_Eir2rNpR70zm8hW5tWga_zam4bqPu_pyOAryZ1V3O5YFdDt08_vbumzP_JGsatdGwdqbDNJ_R8WH2g'
 
@@ -14,6 +15,7 @@ const LEGEND = [
 ]
 
 export default function MapView({ mapPoints, aboveRef }) {
+  const { t } = useLang()
   const containerRef = useRef(null)
   const mapRef       = useRef(null)
   const selectRef    = useRef(null)
@@ -124,7 +126,7 @@ export default function MapView({ mapPoints, aboveRef }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'DM Mono, monospace', fontSize: 11, letterSpacing: '2px', color: '#6b6b6b',
         }}>
-          LOADING MAP...
+          {t.map.loading}
         </div>
       )}
 
@@ -135,7 +137,7 @@ export default function MapView({ mapPoints, aboveRef }) {
             <span className="map-detail-fsa">{selected.fsa}</span>
             <div className="map-detail-totals">
               <span className="map-detail-amount">{fmt(selected.total)}</span>
-              <span className="map-detail-count">{selected.count.toLocaleString()} donations</span>
+              <span className="map-detail-count">{selected.count.toLocaleString()} {t.map.donations}</span>
             </div>
             <button className="map-detail-close" onClick={() => setSelected(null)}>×</button>
           </div>
@@ -153,14 +155,14 @@ export default function MapView({ mapPoints, aboveRef }) {
 
       {/* Legend — overlaid at bottom of map */}
       <div className="map-legend-bar">
-        <span className="leg-label">Top party per FSA:</span>
+        <span className="leg-label">{t.map.legendLabel}</span>
         {LEGEND.map(([label, color]) => (
           <div key={label} className="leg-item">
             <div className="leg-dot" style={{ background: color }} />
             <span>{label}</span>
           </div>
         ))}
-        <span className="leg-hint">Tap a dot for details · Size = total donations</span>
+        <span className="leg-hint">{t.map.legendHint}</span>
       </div>
     </div>
   )

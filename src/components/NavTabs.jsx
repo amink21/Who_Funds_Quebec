@@ -1,20 +1,22 @@
-const TABS = [
-  { id: 'map',     label: '🗺 Map' },
-  { id: 'parties', label: '💰 Parties' },
-  { id: 'search',  label: '🔍 Search' },
-  { id: 'about',   label: '📖 About' },
-]
+import { useLang } from '../context/LanguageContext'
 
 export default function NavTabs({ activeTab, onTabChange }) {
+  const { t } = useLang()
+  const TABS = [
+    { id: 'map',     label: t.tabs.map },
+    { id: 'parties', label: t.tabs.parties },
+    { id: 'search',  label: t.tabs.search },
+    { id: 'about',   label: t.tabs.about },
+  ]
   return (
     <div className="nav-tabs">
-      {TABS.map(t => (
+      {TABS.map(tab => (
         <div
-          key={t.id}
-          className={`nav-tab${activeTab === t.id ? ' active' : ''}`}
-          onClick={() => onTabChange(t.id)}
+          key={tab.id}
+          className={`nav-tab${activeTab === tab.id ? ' active' : ''}`}
+          onClick={() => onTabChange(tab.id)}
         >
-          {t.label}
+          {tab.label}
         </div>
       ))}
     </div>
