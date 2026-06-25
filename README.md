@@ -4,7 +4,7 @@
 
 An interactive data visualization of every disclosed political contribution made in Quebec from 2019 to 2026 — both provincial and municipal. Built as a static React app with no backend: just a Python preprocessing script and a JSON file.
 
-Data source: [Élections Québec Public Donor Registry](https://www.electionsquebec.qc.ca/en/political-financing/political-donations/) — public record under Quebec's *Election Act*.
+Data source: [Élections Québec Public Donor Registry](https://www.electionsquebec.qc.ca/en/financing-expenses-and-contributions/research-on-contributors/) — public record under Quebec's *Election Act*.
 
 ---
 
