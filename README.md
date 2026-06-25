@@ -47,7 +47,7 @@ who-funds-quebec/
 │
 ├── public/
 │   ├── data.json                       # 80 KB — map points, charts, summaries (committed)
-│   └── search_donors.json             # 7 MB  — all donors for fuzzy search (gitignored, generated)
+│   └── search_donors.json             # 7 MB  — all donors for fuzzy search (committed)
 │
 └── src/
     ├── main.jsx                        # Entry point
@@ -113,11 +113,11 @@ python scripts/preprocess.py
 
 This reads both CSVs and writes:
 - `public/data.json` — 80 KB summary used by the map and charts
-- `public/search_donors.json` — 7 MB donor index used by the search tab
+- `public/search_donors.json` — 7 MB donor index used by the search tab (both files are committed)
 
 Runtime: ~5–10 seconds.
 
-> **Note:** `public/data.json` is already committed so the map and charts work immediately after clone. You only need to run the script if you want the Search tab to work, or if the CSVs have been updated.
+> **Note:** Both `public/data.json` and `public/search_donors.json` are committed, so the full app works immediately after clone. You only need to run the script if the CSVs have been updated.
 
 ### 4. Install dependencies and run
 
@@ -208,7 +208,7 @@ Output goes to `dist/`. The site is fully static — deploy to any static host:
 - **Netlify** — same, drag-and-drop `dist/` or connect repo
 - **GitHub Pages** — set `base` in `vite.config.js` if serving from a subdirectory
 
-> `public/search_donors.json` (7 MB) is gitignored. If you deploy from CI, either add a build step that runs `preprocess.py` before `vite build`, or commit the file separately.
+> `public/search_donors.json` (7 MB) is committed alongside the code, so search works on any deployment without a build step.
 
 ---
 

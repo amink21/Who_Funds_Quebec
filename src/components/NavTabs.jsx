@@ -2,6 +2,7 @@ const TABS = [
   { id: 'map',     label: '🗺 Map' },
   { id: 'parties', label: '💰 Parties' },
   { id: 'search',  label: '🔍 Search' },
+  { id: 'about',   label: '📖 About' },
 ]
 
 export default function NavTabs({ activeTab, onTabChange }) {

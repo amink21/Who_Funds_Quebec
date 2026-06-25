@@ -7,6 +7,7 @@ import NavTabs from './components/NavTabs'
 import MapView from './components/MapView'
 import PartiesView from './components/PartiesView'
 import SearchView from './components/SearchView'
+import AboutView from './components/AboutView'
 import Footer from './components/Footer'
 
 export default function App() {
@@ -76,6 +77,7 @@ export default function App() {
           />
         )}
         {activeTab === 'search'  && <SearchView />}
+        {activeTab === 'about'   && <AboutView />}
       </div>
       {activeTab !== 'map' && <Footer />}
     </>

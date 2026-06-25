@@ -57,7 +57,7 @@ export default function SearchView() {
         )}
         {status === 'error' && (
           <div style={{ marginTop: 10, fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#c0392b' }}>
-            Run <code>python scripts/preprocess.py</code> to generate search_donors.json
+            Donor search is unavailable — the search index was not included in this deployment.
           </div>
         )}
         <div className="search-results">
