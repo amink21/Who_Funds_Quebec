@@ -370,7 +370,7 @@ body { background: var(--ink); color: var(--ink); font-family: 'Inter', sans-ser
   /* Map detail card — compact bottom strip on phone */
   .map-detail-card {
     top: auto; right: 0; left: 0;
-    bottom: 32px; /* sit above legend bar */
+    bottom: 0;
     max-width: 100%; min-width: 0;
     border: none; border-top: 2px solid var(--ink);
     box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
@@ -386,11 +386,8 @@ body { background: var(--ink); color: var(--ink); font-family: 'Inter', sans-ser
     gap: 14px;
   }
 
-  /* Compact legend on phone — dots only, no text labels */
-  .map-legend-bar .leg-label { display: none; }
-  .leg-item span { display: none; }
-  .map-legend-bar { padding: 6px 12px; gap: 8px; }
-  .leg-dot { width: 14px; height: 14px; }
+  /* Hide legend on phone — map goes full height */
+  .map-legend-bar { display: none; }
 
   .about-hero { padding: 20px 16px; }
   .about-headline { font-size: clamp(20px, 6vw, 28px); }
