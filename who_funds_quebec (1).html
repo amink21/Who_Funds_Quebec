@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Funds Quebec?</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --ink:    #0e0e0e;
+  --paper:  #f5f0e8;
+  --subtle: #e8e2d6;
+  --muted:  #6b6b6b;
+  --red:    #c0392b;
+  --blue:   #1a3a6b;
+  --gold:   #b8860b;
+  --green:  #1d6b3b;
+  --orange: #c96a00;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; font-size:15px; }
+
+/* MASTHEAD */
+.masthead {
+  background:var(--ink); color:var(--paper);
+  padding:48px 32px 36px; text-align:center;
+  border-bottom:3px solid var(--gold);
+}
+.eyebrow {
+  font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:14px;
+}
+.masthead h1 {
+  font-family:'Libre Baskerville',serif;
+  font-size:clamp(40px,8vw,80px); font-weight:700;
+  line-height:.95; letter-spacing:-2px; margin-bottom:18px;
+}
+.masthead h1 em { font-style:italic; color:var(--gold); }
+.masthead-sub { font-family:'DM Mono',monospace; font-size:12px; color:rgba(245,240,232,.5); letter-spacing:1px; }
+
+/* TICKER */
+.ticker { background:var(--red); color:#fff; padding:10px 0; overflow:hidden; white-space:nowrap; }
+.ticker-inner { display:inline-block; animation:tick 40s linear infinite; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; }
+@keyframes tick { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
+
+/* STATS BAR */
+.stats-bar { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:2px solid var(--ink); }
+.stat-cell { padding:28px 20px; border-right:1px solid var(--ink); text-align:center; }
+.stat-cell:last-child { border-right:none; }
+.stat-num { font-family:'Libre Baskerville',serif; font-size:clamp(24px,4vw,40px); font-weight:700; line-height:1; margin-bottom:6px; }
+.stat-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+
+/* NAV TABS */
+.nav-tabs { display:flex; border-bottom:2px solid var(--ink); background:var(--subtle); }
+.nav-tab {
+  padding:14px 28px; font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+  border-right:1px solid var(--ink); border-bottom:2px solid transparent;
+  margin-bottom:-2px; transition:all .2s;
+}
+.nav-tab:hover { background:var(--paper); }
+.nav-tab.active { background:var(--paper); border-bottom-color:var(--paper); font-weight:600; }
+
+/* PANELS */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* LAYOUT */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; border-bottom:2px solid var(--ink); }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:2px solid var(--ink); }
+.section { padding:32px 28px; border-right:1px solid var(--ink); }
+.section:last-child { border-right:none; }
+.section-label {
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--muted); margin-bottom:18px;
+  padding-bottom:10px; border-bottom:1px solid var(--ink);
+}
+
+/* MAP */
+#map { width:100%; height:520px; }
+.map-legend {
+  display:flex; gap:16px; flex-wrap:wrap; padding:16px 28px;
+  border-bottom:2px solid var(--ink); background:var(--paper);
+}
+.leg-item { display:flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:11px; }
+.leg-dot { width:12px; height:12px; border-radius:50%; }
+
+/* PARTY BARS */
+.party-row { margin-bottom:13px; }
+.party-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+.party-name { font-size:12px; font-weight:600; max-width:60%; line-height:1.3; }
+.party-meta { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); text-align:right; }
+.bar-track { height:5px; background:var(--subtle); }
+.bar-fill { height:100%; transition:width 1.2s ease; }
+.badge { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:1px 5px; border:1px solid currentColor; margin-left:4px; vertical-align:middle; }
+.badge.prov { color:var(--blue); }
+.badge.mun  { color:var(--green); }
+
+/* DONOR TABLE */
+.donor-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--subtle); gap:10px; }
+.donor-row:last-child { border-bottom:none; }
+.d-rank { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); min-width:22px; }
+.d-name { font-size:13px; font-weight:500; flex:1; }
+.d-parties { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; text-align:right; max-width:130px; line-height:1.3; }
+.d-amount { font-family:'DM Mono',monospace; font-size:12px; font-weight:600; min-width:65px; text-align:right; }
+
+/* CITY LIST */
+.city-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--subtle); }
+.city-row:last-child { border-bottom:none; }
+.city-name { font-size:13px; font-weight:500; min-width:100px; }
+.city-bar { flex:1; height:4px; background:var(--subtle); }
+.city-fill { height:100%; background:var(--ink); }
+.city-amt { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); min-width:72px; text-align:right; }
+
+/* CHART */
+.chart-wrap { position:relative; height:300px; margin-top:4px; }
+.chart-wrap-lg { position:relative; height:400px; }
+
+/* MULTI DONORS */
+.multi-row { padding:11px 0; border-bottom:1px solid var(--subtle); }
+.multi-row:last-child { border-bottom:none; }
+.multi-name { font-size:13px; font-weight:600; margin-bottom:4px; }
+.multi-meta { display:flex; justify-content:space-between; gap:10px; }
+.multi-parties { font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; line-height:1.5; flex:1; }
+.multi-amt { font-family:'DM Mono',monospace; font-size:12px; font-weight:600; white-space:nowrap; }
+
+/* SEARCH */
+.search-wrap { padding:24px 28px; border-bottom:2px solid var(--ink); background:var(--subtle); }
+.search-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.search-input {
+  width:100%; max-width:560px; padding:12px 16px;
+  font-family:'DM Mono',monospace; font-size:14px;
+  border:2px solid var(--ink); background:var(--paper); outline:none;
+}
+.search-input:focus { border-color:var(--blue); }
+.search-results { margin-top:14px; max-width:560px; }
+.s-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--subtle); font-size:13px; gap:12px; }
+.s-row:last-child { border-bottom:none; }
+.s-name { font-weight:600; }
+.s-party { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); flex:1; text-align:center; }
+.s-amt { font-family:'DM Mono',monospace; font-size:12px; }
+
+/* INSIGHT CARDS */
+.insights { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:2px solid var(--ink); }
+.insight { padding:28px; border-right:1px solid var(--ink); }
+.insight:last-child { border-right:none; }
+.insight-num { font-family:'Libre Baskerville',serif; font-size:36px; font-weight:700; color:var(--red); line-height:1; margin-bottom:8px; }
+.insight-label { font-size:13px; font-weight:500; margin-bottom:6px; }
+.insight-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+
+/* MAP TOOLTIP */
+.map-popup { font-family:'DM Mono',monospace; font-size:12px; line-height:1.8; }
+.map-popup strong { font-size:14px; font-family:'Libre Baskerville',serif; display:block; margin-bottom:4px; }
+
+/* FOOTER */
+.footer { background:var(--ink); color:var(--paper); padding:24px 32px; display:flex; justify-content:space-between; align-items:center; border-top:3px solid var(--gold); }
+.footer-l { font-family:'DM Mono',monospace; font-size:10px; color:rgba(245,240,232,.45); letter-spacing:1px; }
+.footer-r { font-family:'Libre Baskerville',serif; font-size:13px; color:var(--gold); font-style:italic; }
+
+@media(max-width:768px) {
+  .stats-bar,.insights { grid-template-columns:1fr 1fr; }
+  .grid-2,.grid-3 { grid-template-columns:1fr; }
+  .section { border-right:none; border-bottom:1px solid var(--ink); }
+  .nav-tab { padding:12px 16px; font-size:10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="eyebrow">Élections Québec · Public Donor Registry · 2019–2026</div>
+  <h1>Who Funds <em>Québec?</em></h1>
+  <div class="masthead-sub">289,374 donations &nbsp;·&nbsp; $30,383,214 &nbsp;·&nbsp; 108,216 donors &nbsp;·&nbsp; 7 years of data</div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker">
+  <span class="ticker-inner">
+    &nbsp;&nbsp;&nbsp;PQ raised $6.7M from 80,514 donors &nbsp;·&nbsp;
+    CAQ raised $5.1M from 49,522 donors &nbsp;·&nbsp;
+    12,046 donors gave to BOTH provincial AND municipal parties &nbsp;·&nbsp;
+    6,769 donors gave to 3+ different parties &nbsp;·&nbsp;
+    Westmount (H3Y) donors gave $189k — 98% went to PLQ &nbsp;·&nbsp;
+    2022 provincial election year: $5.3M raised — 2.5× normal &nbsp;·&nbsp;
+    2021 municipal election year: $5.6M raised — 6× normal &nbsp;·&nbsp;
+    Montréal donors gave $7.1M total &nbsp;·&nbsp;
+    Stéphane Boyer (Laval mayor) donated $2,400 to his own party &nbsp;·&nbsp;
+    Luc Rabouin (Projet Montréal leader) is the top municipal donor at $3,600 &nbsp;·&nbsp;
+  </span>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-cell"><div class="stat-num">$30.4M</div><div class="stat-label">Total Donated</div></div>
+  <div class="stat-cell"><div class="stat-num">289,374</div><div class="stat-label">Donations</div></div>
+  <div class="stat-cell"><div class="stat-num">108,216</div><div class="stat-label">Unique Donors</div></div>
+  <div class="stat-cell"><div class="stat-num">2019–26</div><div class="stat-label">7 Years of Data</div></div>
+</div>
+
+<!-- INSIGHT CARDS -->
+<div class="insights">
+  <div class="insight">
+    <div class="insight-num">6,769</div>
+    <div class="insight-label">Political hedgers</div>
+    <div class="insight-desc">Donors who gave money to 3 or more different parties — spreading influence across the political spectrum.</div>
+  </div>
+  <div class="insight">
+    <div class="insight-num">12,046</div>
+    <div class="insight-label">Dual-level donors</div>
+    <div class="insight-desc">People who donated to both provincial AND municipal parties — the most politically active Quebecers.</div>
+  </div>
+  <div class="insight">
+    <div class="insight-num">98%</div>
+    <div class="insight-label">Westmount → PLQ</div>
+    <div class="insight-desc">Of all donations from the H3Y postal code (Westmount), 98% went to the Quebec Liberal Party.</div>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPanel('map')">&#x1F5FA; Map</div>
+  <div class="nav-tab" onclick="showPanel('parties')">&#x1F4B0; Parties</div>
+  <div class="nav-tab" onclick="showPanel('donors')">&#x1F464; Donors</div>
+  <div class="nav-tab" onclick="showPanel('search')">&#x1F50D; Search</div>
+</div>
+
+<!-- PANEL: MAP -->
+<div class="panel active" id="panel-map">
+  <div id="map"></div>
+  <div class="map-legend">
+    <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6b6b6b;margin-right:8px;">Top party per postal code:</span>
+    <div class="leg-item"><div class="leg-dot" style="background:#1a3a6b"></div>PQ</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#c0392b"></div>CAQ</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#8B0000"></div>PLQ</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#c96a00"></div>QS</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#1d6b3b"></div>Projet MTL</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#1a3a6b"></div>Ensemble MTL</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#555"></div>PCQ / Other</div>
+    <div class="leg-item" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:#6b6b6b;">Circle size = total donations</div>
+  </div>
+</div>
+
+<!-- PANEL: PARTIES -->
+<div class="panel" id="panel-parties">
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-label">Top Parties — Total Raised</div>
+      <div id="partyBars"></div>
+    </div>
+    <div class="section">
+      <div class="section-label">Provincial Donations by Year</div>
+      <div class="chart-wrap"><canvas id="yearChart"></canvas></div>
+      <div style="margin-top:24px">
+        <div class="section-label">City Breakdown</div>
+        <div id="cityList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-label">Party Funding Profile — Who Gives More</div>
+      <div class="chart-wrap"><canvas id="partyPieChart"></canvas></div>
+    </div>
+    <div class="section">
+      <div class="section-label">Donors Who Fund Multiple Parties</div>
+      <div id="multiList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: DONORS -->
+<div class="panel" id="panel-donors">
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-label">Top 20 Donors — All Time</div>
+      <div id="donorList"></div>
+    </div>
+    <div class="section">
+      <div class="section-label">Donation Size Distribution</div>
+      <div class="chart-wrap-lg"><canvas id="donorChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: SEARCH -->
+<div class="panel" id="panel-search">
+  <div class="search-wrap">
+    <div class="search-label">Search any donor</div>
+    <input class="search-input" id="searchInput" type="text" placeholder="Type a name, e.g. Tremblay..."/>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <div class="section" style="border:none;padding:28px">
+    <div class="section-label">How to use</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.8;max-width:600px">
+      Search any Quebec resident's name to see their political donation history across both provincial and municipal parties.
+      All data is public record under Quebec's Election Act. Names, amounts, cities, and parties are all disclosed.
+      <br><br>
+      Try searching: <strong>Tremblay</strong>, <strong>Gagnon</strong>, <strong>Roy</strong>, <strong>Bouchard</strong>
+    </p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-l">Source: Élections Québec · Public Donor Registry · CC-BY &nbsp;·&nbsp; Data: 2019–2026</div>
+  <div class="footer-r">All contributions are public record under Quebec's Election Act</div>
+</div>
+
+<script>
+const MAP_POINTS  = [{"fsa": "J0K", "lat": 46.3333, "lng": -73.5, "total": 337757, "count": 4095, "top_party": "PQ", "parties": {"PLQ": 10295.0, "CAQ": 110642.0, "PCQ": 24474.670000000006, "PQ": 132674.5, "QS": 44305.42999999997, "OTHER": 15365.5}}, {"fsa": "G1S", "lat": 46.7994, "lng": -71.2844, "total": 260781, "count": 2703, "top_party": "PQ", "parties": {"PLQ": 29145.0, "CAQ": 35450.0, "PQ": 142542.25, "PCQ": 7570.57, "QS": 42989.92999999999, "OTHER": 3083.35}}, {"fsa": "G0A", "lat": 47.1667, "lng": -70.8333, "total": 228365, "count": 2764, "top_party": "CAQ", "parties": {"PQ": 72749.47, "CAQ": 77110.0, "PLQ": 12780.0, "PCQ": 41867.799999999996, "QS": 20001.059999999998, "OTHER": 3857.0}}, {"fsa": "G0R", "lat": 46.8333, "lng": -70.5, "total": 200019, "count": 2464, "top_party": "PQ", "parties": {"PLQ": 9674.69, "CAQ": 61670.0, "PQ": 75462.0, "OTHER": 2625.0, "QS": 13503.15, "PCQ": 37083.74}}, {"fsa": "H3Y", "lat": 45.4727, "lng": -73.5943, "total": 188987, "count": 1009, "top_party": "PLQ", "parties": {"PLQ": 163468.0, "CAQ": 16245.0, "OTHER": 3600.0, "PCQ": 2894.0, "QS": 1165.0, "PQ": 1615.0}}, {"fsa": "H2V", "lat": 45.5228, "lng": -73.6089, "total": 182835, "count": 1541, "top_party": "PLQ", "parties": {"CAQ": 31440.0, "PLQ": 68118.0, "PQ": 48118.0, "QS": 29534.43999999999, "OTHER": 3005.0, "PCQ": 2619.57}}, {"fsa": "J0B", "lat": 45.2167, "lng": -72.3333, "total": 179759, "count": 1957, "top_party": "PQ", "parties": {"PLQ": 25726.0, "PQ": 48287.509999999995, "CAQ": 44557.0, "QS": 39754.57, "OTHER": 10881.0, "PCQ": 10552.67}}, {"fsa": "J6E", "lat": 45.7333, "lng": -74.0, "total": 176397, "count": 2157, "top_party": "PQ", "parties": {"PQ": 110767.31999999999, "QS": 16053.139999999996, "CAQ": 38090.0, "PCQ": 5024.35, "PLQ": 4920.0, "OTHER": 1542.0}}, {"fsa": "G1R", "lat": 46.8139, "lng": -71.2167, "total": 171120, "count": 1800, "top_party": "PQ", "parties": {"PLQ": 15295.0, "PQ": 78021.0, "QS": 48491.099999999984, "CAQ": 21647.0, "PCQ": 4547.66, "OTHER": 3118.0}}, {"fsa": "J4B", "lat": 45.5333, "lng": -73.2667, "total": 163663, "count": 1674, "top_party": "PQ", "parties": {"PLQ": 37360.0, "CAQ": 42065.0, "PQ": 56819.979999999996, "QS": 12539.07, "OTHER": 6266.0, "PCQ": 8613.23}}, {"fsa": "J0T", "lat": 46.0, "lng": -74.5, "total": 160635, "count": 1846, "top_party": "PQ", "parties": {"PLQ": 17667.0, "PQ": 52484.0, "QS": 22211.899999999994, "CAQ": 48090.0, "PCQ": 11971.67, "OTHER": 8210.07}}, {"fsa": "G0X", "lat": 47.3333, "lng": -72.5, "total": 159741, "count": 2079, "top_party": "PQ", "parties": {"PLQ": 13600.0, "CAQ": 48581.240000000005, "QS": 13932.24, "PQ": 55760.520000000004, "PCQ": 18698.230000000003, "OTHER": 9169.0}}, {"fsa": "J0E", "lat": 45.25, "lng": -72.75, "total": 157656, "count": 1651, "top_party": "PLQ", "parties": {"QS": 22580.769999999997, "CAQ": 39280.0, "PQ": 36558.0, "PCQ": 9462.58, "PLQ": 43930.0, "OTHER": 5845.0}}, {"fsa": "H3E", "lat": 45.4526, "lng": -73.5392, "total": 155178, "count": 1307, "top_party": "PLQ", "parties": {"PLQ": 74935.65, "PQ": 29387.0, "CAQ": 36060.0, "QS": 7540.0, "OTHER": 1660.0, "PCQ": 5595.0}}, {"fsa": "H2J", "lat": 45.5241, "lng": -73.5819, "total": 148961, "count": 1487, "top_party": "QS", "parties": {"QS": 72909.46999999999, "PQ": 48048.26, "PCQ": 1946.0, "CAQ": 11615.0, "OTHER": 2362.5, "PLQ": 12080.0}}, {"fsa": "G0S", "lat": 46.5, "lng": -71.3333, "total": 147341, "count": 1936, "top_party": "PQ", "parties": {"PLQ": 11404.57, "PQ": 49626.53999999999, "OTHER": 4077.0, "CAQ": 47145.0, "QS": 4083.08, "PCQ": 31004.940000000002}}, {"fsa": "J0R", "lat": 45.6667, "lng": -74.3333, "total": 146917, "count": 1597, "top_party": "PQ", "parties": {"PLQ": 18850.0, "PQ": 43717.3, "CAQ": 42297.0, "QS": 9168.209999999997, "PCQ": 12691.439999999999, "OTHER": 20193.0}}, {"fsa": "H2L", "lat": 45.5189, "lng": -73.5698, "total": 144045, "count": 1413, "top_party": "QS", "parties": {"CAQ": 10750.0, "PLQ": 19300.0, "QS": 55305.24999999999, "PQ": 50080.0, "OTHER": 6679.0, "PCQ": 1931.22}}, {"fsa": "H1Y", "lat": 45.5681, "lng": -73.5589, "total": 131800, "count": 1464, "top_party": "QS", "parties": {"PQ": 49495.37, "PLQ": 6855.0, "CAQ": 11620.0, "QS": 57639.57999999999, "OTHER": 3994.0, "PCQ": 2195.66}}, {"fsa": "J0L", "lat": 45.3333, "lng": -73.6667, "total": 128698, "count": 1558, "top_party": "CAQ", "parties": {"CAQ": 52042.0, "PQ": 35860.0, "PCQ": 9510.56, "OTHER": 9480.0, "QS": 12655.0, "PLQ": 9150.5}}, {"fsa": "G1W", "lat": 46.7886, "lng": -71.3011, "total": 122869, "count": 1260, "top_party": "PQ", "parties": {"PQ": 59444.0, "PLQ": 11930.0, "CAQ": 25372.0, "PCQ": 6738.07, "QS": 18185.52, "OTHER": 1199.0}}, {"fsa": "G7H", "lat": 48.4, "lng": -71.0333, "total": 121739, "count": 1228, "top_party": "PQ", "parties": {"PLQ": 6368.0, "PQ": 50725.3, "PCQ": 4944.099999999999, "QS": 9801.150000000001, "CAQ": 49205.5, "OTHER": 695.0}}, {"fsa": "G1K", "lat": 46.8028, "lng": -71.2239, "total": 110208, "count": 1214, "top_party": "QS", "parties": {"QS": 61623.6, "PQ": 23967.0, "CAQ": 15366.0, "PLQ": 2511.33, "PCQ": 4955.1, "OTHER": 1785.0}}, {"fsa": "J4H", "lat": 45.4833, "lng": -73.3167, "total": 104967, "count": 1038, "top_party": "PQ", "parties": {"PQ": 56941.0, "QS": 24865.479999999974, "CAQ": 10940.0, "OTHER": 5185.0, "PLQ": 4557.0, "PCQ": 2478.2200000000003}}, {"fsa": "H3R", "lat": 45.4944, "lng": -73.6528, "total": 104326, "count": 763, "top_party": "PLQ", "parties": {"PLQ": 81514.99, "CAQ": 16681.0, "PQ": 3060.0, "PCQ": 1330.0, "QS": 940.0, "OTHER": 800.0}}, {"fsa": "G1V", "lat": 46.7797, "lng": -71.2822, "total": 100361, "count": 1086, "top_party": "PQ", "parties": {"PQ": 54665.0, "CAQ": 18589.0, "OTHER": 1682.0, "PCQ": 4862.4400000000005, "QS": 12721.11, "PLQ": 7841.0}}, {"fsa": "H2K", "lat": 45.5289, "lng": -73.5548, "total": 95298, "count": 1061, "top_party": "QS", "parties": {"PQ": 27036.920000000006, "QS": 45495.15999999999, "OTHER": 4635.0, "PCQ": 2533.66, "CAQ": 7617.0, "PLQ": 7980.0}}, {"fsa": "J3Y", "lat": 45.3667, "lng": -73.4333, "total": 93042, "count": 1121, "top_party": "PQ", "parties": {"PLQ": 11335.0, "PQ": 41960.0, "OTHER": 3432.0, "QS": 9155.0, "CAQ": 22619.0, "PCQ": 4541.4400000000005}}, {"fsa": "H3Z", "lat": 45.4743, "lng": -73.5881, "total": 85860, "count": 615, "top_party": "PLQ", "parties": {"PLQ": 72831.6, "PCQ": 2183.4700000000003, "OTHER": 1825.0, "CAQ": 7000.0, "QS": 1035.0, "PQ": 985.0}}, {"fsa": "G1T", "lat": 46.8194, "lng": -71.2556, "total": 72076, "count": 633, "top_party": "PQ", "parties": {"PQ": 29180.0, "OTHER": 1020.0, "PCQ": 4931.219999999999, "CAQ": 21280.0, "PLQ": 12450.0, "QS": 3215.0}}, {"fsa": "H7P", "lat": 45.5833, "lng": -73.75, "total": 70535, "count": 947, "top_party": "PQ", "parties": {"PQ": 31363.0, "PLQ": 20915.0, "CAQ": 11805.0, "QS": 910.0, "OTHER": 1200.0, "PCQ": 4341.54}}, {"fsa": "J9A", "lat": 45.45, "lng": -75.7833, "total": 70325, "count": 672, "top_party": "PQ", "parties": {"PLQ": 15203.69, "CAQ": 9130.0, "PQ": 33785.16, "QS": 8424.68, "PCQ": 2922.44, "OTHER": 859.0}}, {"fsa": "H7W", "lat": 45.5667, "lng": -73.7333, "total": 69541, "count": 680, "top_party": "PLQ", "parties": {"PLQ": 33562.78999999999, "PQ": 15290.0, "CAQ": 13095.0, "OTHER": 1350.0, "PCQ": 3203.66, "QS": 3040.0}}, {"fsa": "H3G", "lat": 45.4975, "lng": -73.5798, "total": 68881, "count": 442, "top_party": "PLQ", "parties": {"PLQ": 55899.96000000001, "CAQ": 6170.0, "PQ": 2956.0, "PCQ": 600.0, "QS": 1895.0, "OTHER": 1360.0}}, {"fsa": "H2X", "lat": 45.5105, "lng": -73.5681, "total": 68342, "count": 622, "top_party": "PQ", "parties": {"CAQ": 6195.0, "PLQ": 14870.0, "PCQ": 1052.22, "PQ": 26695.95, "QS": 15202.0, "OTHER": 4327.0}}, {"fsa": "J8T", "lat": 45.4667, "lng": -75.7333, "total": 66917, "count": 728, "top_party": "CAQ", "parties": {"PLQ": 8019.0, "PQ": 24045.0, "QS": 4554.9400000000005, "CAQ": 26790.0, "PCQ": 2936.44, "OTHER": 572.0}}, {"fsa": "J4N", "lat": 45.55, "lng": -73.4667, "total": 62721, "count": 639, "top_party": "PQ", "parties": {"PLQ": 7208.0, "PQ": 34290.0, "QS": 4301.42, "CAQ": 12755.0, "OTHER": 1585.0, "PCQ": 2581.44}}, {"fsa": "H2H", "lat": 45.5344, "lng": -73.5611, "total": 62305, "count": 639, "top_party": "QS", "parties": {"PQ": 19900.0, "QS": 29131.17, "OTHER": 2586.0, "PLQ": 6793.3, "CAQ": 3575.0, "PCQ": 319.22}}, {"fsa": "J8Y", "lat": 45.4333, "lng": -75.7167, "total": 60386, "count": 641, "top_party": "PQ", "parties": {"PLQ": 7189.8099999999995, "PQ": 23036.0, "CAQ": 8709.0, "QS": 13456.58, "OTHER": 4725.0, "PCQ": 3269.44}}, {"fsa": "H2T", "lat": 45.5244, "lng": -73.5939, "total": 57852, "count": 633, "top_party": "QS", "parties": {"PQ": 20990.4, "OTHER": 1725.0, "QS": 25166.17, "PLQ": 7170.0, "CAQ": 2100.0, "PCQ": 700.0}}, {"fsa": "J4J", "lat": 45.5167, "lng": -73.5167, "total": 57621, "count": 713, "top_party": "PQ", "parties": {"PLQ": 5736.370000000001, "CAQ": 8970.0, "PQ": 29340.0, "QS": 7997.84, "PCQ": 3678.2200000000003, "OTHER": 1899.0}}, {"fsa": "J8V", "lat": 45.45, "lng": -75.7167, "total": 54505, "count": 588, "top_party": "PQ", "parties": {"PLQ": 5696.63, "CAQ": 19082.0, "PQ": 20845.0, "QS": 3153.21, "PCQ": 5103.22, "OTHER": 625.0}}, {"fsa": "H7T", "lat": 45.5833, "lng": -73.8, "total": 52345, "count": 533, "top_party": "PLQ", "parties": {"PLQ": 27167.0, "CAQ": 8365.0, "PQ": 11550.0, "OTHER": 1160.0, "QS": 2075.0, "PCQ": 2028.22}}, {"fsa": "H7G", "lat": 45.6167, "lng": -73.7333, "total": 52027, "count": 578, "top_party": "PQ", "parties": {"PQ": 19954.0, "CAQ": 4875.0, "QS": 6803.16, "PLQ": 17166.0, "PCQ": 2288.2200000000003, "OTHER": 941.0}}, {"fsa": "H3S", "lat": 45.4944, "lng": -73.6211, "total": 51593, "count": 495, "top_party": "PLQ", "parties": {"CAQ": 6815.0, "PLQ": 25585.0, "PQ": 9475.0, "QS": 7765.0, "OTHER": 375.0, "PCQ": 1578.17}}, {"fsa": "J4K", "lat": 45.5167, "lng": -73.4833, "total": 50948, "count": 605, "top_party": "PQ", "parties": {"PLQ": 7220.0, "PQ": 21335.0, "CAQ": 7650.0, "PCQ": 3187.44, "QS": 9690.130000000001, "OTHER": 1865.0}}, {"fsa": "J4R", "lat": 45.4167, "lng": -73.4667, "total": 49369, "count": 436, "top_party": "PLQ", "parties": {"PLQ": 16527.0, "CAQ": 14205.0, "PQ": 11890.0, "QS": 3945.0, "OTHER": 1316.0, "PCQ": 1485.5700000000002}}, {"fsa": "H4C", "lat": 45.4713, "lng": -73.5811, "total": 47624, "count": 453, "top_party": "QS", "parties": {"PLQ": 16832.5, "PQ": 6582.0, "QS": 18491.86, "CAQ": 3160.0, "PCQ": 1723.66, "OTHER": 834.0}}, {"fsa": "G2K", "lat": 46.8878, "lng": -71.2428, "total": 43276, "count": 532, "top_party": "PQ", "parties": {"PQ": 14894.0, "PLQ": 6790.0, "PCQ": 8284.8, "QS": 2309.9, "CAQ": 10602.0, "OTHER": 395.0}}, {"fsa": "H3K", "lat": 45.4807, "lng": -73.5674, "total": 41522, "count": 387, "top_party": "QS", "parties": {"QS": 12886.49, "PQ": 6440.0, "CAQ": 8025.0, "PLQ": 11790.0, "OTHER": 1280.0, "PCQ": 1100.73}}, {"fsa": "G2B", "lat": 46.8839, "lng": -71.2822, "total": 41098, "count": 586, "top_party": "PQ", "parties": {"PQ": 12761.619999999999, "CAQ": 8565.0, "OTHER": 756.0, "PCQ": 12036.16, "PLQ": 3849.0, "QS": 3130.0}}, {"fsa": "J8Z", "lat": 45.4167, "lng": -75.75, "total": 40659, "count": 429, "top_party": "PQ", "parties": {"PLQ": 7155.0, "PQ": 17365.0, "QS": 3639.7000000000003, "OTHER": 2161.0, "CAQ": 9430.0, "PCQ": 908.0}}, {"fsa": "H3T", "lat": 45.4978, "lng": -73.6278, "total": 38825, "count": 367, "top_party": "PQ", "parties": {"PLQ": 10440.0, "CAQ": 8670.0, "PQ": 13780.0, "QS": 5015.0, "OTHER": 565.0, "PCQ": 355.0}}, {"fsa": "H7V", "lat": 45.5667, "lng": -73.7833, "total": 36884, "count": 392, "top_party": "PQ", "parties": {"PLQ": 11770.0, "PQ": 13594.0, "QS": 4185.0, "CAQ": 4945.0, "PCQ": 815.0, "OTHER": 1575.0}}, {"fsa": "G7J", "lat": 48.4333, "lng": -71.05, "total": 36161, "count": 385, "top_party": "CAQ", "parties": {"PQ": 12733.24, "QS": 5551.54, "CAQ": 15682.43, "PLQ": 265.0, "OTHER": 764.3299999999999, "PCQ": 1164.22}}, {"fsa": "H4W", "lat": 45.4594, "lng": -73.6389, "total": 36040, "count": 346, "top_party": "PLQ", "parties": {"PLQ": 28233.0, "CAQ": 4222.0, "OTHER": 1005.0, "PCQ": 1650.0, "QS": 454.97, "PQ": 475.0}}, {"fsa": "H4B", "lat": 45.4614, "lng": -73.6156, "total": 33698, "count": 324, "top_party": "PLQ", "parties": {"PLQ": 20167.0, "PCQ": 2289.2200000000003, "QS": 3201.41, "PQ": 4215.0, "CAQ": 2700.0, "OTHER": 1125.0}}, {"fsa": "J4G", "lat": 45.5, "lng": -73.2667, "total": 28457, "count": 275, "top_party": "PQ", "parties": {"CAQ": 7010.0, "PQ": 12525.0, "PCQ": 2277.0, "QS": 3475.0, "OTHER": 440.0, "PLQ": 2730.0}}, {"fsa": "J8X", "lat": 45.4333, "lng": -75.7667, "total": 23040, "count": 220, "top_party": "PQ", "parties": {"PQ": 7070.0, "QS": 6839.450000000001, "PLQ": 5705.0, "CAQ": 2205.0, "OTHER": 604.0, "PCQ": 616.64}}, {"fsa": "G1P", "lat": 46.7569, "lng": -71.3567, "total": 22666, "count": 316, "top_party": "PQ", "parties": {"PQ": 6967.0, "QS": 2515.0, "OTHER": 1339.0, "CAQ": 4930.0, "PCQ": 5614.570000000001, "PLQ": 1300.0}}, {"fsa": "G7N", "lat": 48.4167, "lng": -71.0667, "total": 18969, "count": 201, "top_party": "PQ", "parties": {"CAQ": 5880.0, "PQ": 8825.0, "PCQ": 1165.0700000000002, "PLQ": 1325.0, "QS": 1510.0, "OTHER": 264.0}}, {"fsa": "H7S", "lat": 45.55, "lng": -73.75, "total": 9485, "count": 104, "top_party": "PQ", "parties": {"QS": 1075.0, "PQ": 2745.0, "CAQ": 1245.0, "PCQ": 1375.0, "PLQ": 2635.0, "OTHER": 410.0}}, {"fsa": "H3A", "lat": 45.5046, "lng": -73.5772, "total": 8790, "count": 62, "top_party": "PLQ", "parties": {"CAQ": 2475.0, "PLQ": 4825.0, "PCQ": 615.0, "PQ": 675.0, "QS": 200.0}}, {"fsa": "G2J", "lat": 46.8667, "lng": -71.25, "total": 5790, "count": 96, "top_party": "PQ", "parties": {"PQ": 1730.0, "PCQ": 1579.72, "CAQ": 1535.0, "PLQ": 400.0, "QS": 400.0, "OTHER": 145.0}}];
+const YEAR_PARTY  = {"2022": {"CAQ": 1351468.63, "PCQ": 679581.1499999999, "PLQ": 613612.0500000002, "PQ": 1570049.5699999996, "QS": 901674.8200000003}, "2026": {"PLQ": 548456.5800000001, "CAQ": 351510.35, "PQ": 841755.93, "QS": 214748.0899999999, "PCQ": 98243.24}, "2019": {"PLQ": 486054.43, "CAQ": 771239.0, "PQ": 446768.59, "QS": 248593.09000000035, "PCQ": 7511.13}, "2021": {"PLQ": 305826.47, "PCQ": 310111.65, "CAQ": 778860.69, "PQ": 498004.97, "QS": 332490.3300000003}, "2024": {"PLQ": 316222.1, "PQ": 951409.9099999998, "QS": 233449.33000000037, "CAQ": 48800.0, "PCQ": 88906.84000000001}, "2020": {"PLQ": 409370.14999999997, "PCQ": 104488.10000000086, "CAQ": 682133.0, "PQ": 741416.62, "QS": 256408.40000000043}, "2023": {"PCQ": 58911.8, "PLQ": 321900.29999999993, "CAQ": 832209.0, "PQ": 801549.47, "QS": 298851.77000000037}, "2025": {"PCQ": 65756.88, "CAQ": 253960.56, "PLQ": 1066637.12, "PQ": 922859.93, "QS": 324896.6600000001}};
+const PARTIES     = [["Parti qu\u00e9b\u00e9cois", 6773814.990000003, 80514, "provincial"], ["Coalition avenir Qu\u00e9bec", 5070181.23, 49522, "provincial"], ["Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party", 4068079.1999999946, 34392, "provincial"], ["Qu\u00e9bec solidaire", 2811112.4899999765, 32180, "provincial"], ["Parti conservateur du Qu\u00e9bec", 1413510.7899999819, 24419, "provincial"], ["Ensemble Montr\u00e9al - \u00c9quipe Soraya", 1019435.0, 6893, "municipal"], ["Projet Montr\u00e9al - \u00c9quipe Luc Rabouin", 946517.5, 7034, "municipal"], ["Projet Montr\u00e9al - \u00c9quipe Val\u00e9rie Plante", 310550.0, 2397, "municipal"], ["Mouvement lavallois - \u00c9quipe St\u00e9phane Boyer", 294764.99, 2377, "municipal"], ["Action Gatineau", 244797.0, 1687, "municipal"], ["Qu\u00e9bec forte et fi\u00e8re", 232929.0, 1788, "municipal"], ["Qu\u00e9bec d'abord", 189633.0, 1542, "municipal"]];
+const DONORS      = [["Gagnon, Michel", 7149.8099999999995, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec"]], ["Tremblay, Denis", 7050.0, ["\u00c9quipe Andr\u00e9e Bouchard", "Qu\u00e9bec solidaire", "M\u00e9tivier, Eddy"]], ["Bouchard, Pierre", 6517.42, ["Qu\u00e9bec forte et fi\u00e8re", "Qu\u00e9bec solidaire", "Bouchard, Pierre"]], ["Tremblay, Jacques", 6171.0, ["\u00c9quipe pour Saint-Jean", "\u00c9quipe Andr\u00e9e Bouchard", "Union nationale"]], ["Tremblay, Pierre", 5509.719999999999, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "Qu\u00e9bec forte et fi\u00e8re", "Parti conservateur du Qu\u00e9bec"]], ["Roy, Andr\u00e9", 5500.0, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "\u00c9quipe LaSalle Team", "Union nationale"]], ["Ducharme, Pierre", 5045.0, ["Coalition avenir Qu\u00e9bec", "Ensemble Montr\u00e9al - \u00c9quipe Soraya", "Parti qu\u00e9b\u00e9cois"]], ["Roy, Michel", 5033.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Roy, Michel"]], ["Tremblay, Suzanne", 4954.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Girard, Manon"]], ["Pelletier, Michel", 4936.3, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Parti libre"]], ["Roy, Denis", 4875.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party"]], ["Tremblay, Guy", 4844.0, ["Union nationale", "Qu\u00e9bec solidaire", "Projet Montr\u00e9al - \u00c9quipe Luc Rabouin"]], ["Gagnon, Andr\u00e9", 4732.0, ["Parti conservateur du Qu\u00e9bec", "Fournier, Jean-Yves", "Vaillancourt, Jacinthe"]], ["Landry, Jacques", 4617.0, ["Parti conservateur du Qu\u00e9bec", "Projet Montr\u00e9al - \u00c9quipe Luc Rabouin", "Robitaille, Steve"]], ["B\u00e9langer, Pierre", 4575.0, ["\u00c9quipe Savard", "Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec"]], ["Lavoie, Claude", 4480.0, ["Qu\u00e9bec forte et fi\u00e8re", "Parti conservateur du Qu\u00e9bec", "Bernard, Nelson"]], ["Gauthier, Michel", 4430.0, ["\u00c9quipe St\u00e9phane Breault", "Parti conservateur du Qu\u00e9bec", "Leblanc, Jean-Fran\u00e7ois"]], ["Tremblay, Marc", 4391.0, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "Climat Qu\u00e9bec", "Union nationale"]], ["C\u00f4t\u00e9, Michel", 4345.0, ["Parti conservateur du Qu\u00e9bec", "Carrier, Alain", "Parti d\u00e9mocratique de Repentigny-Le Gardeur"]], ["Richard, Claude", 4250.0, ["Qu\u00e9bec solidaire", "Projet Montr\u00e9al - \u00c9quipe Luc Rabouin", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party"]]];
+const CITIES      = [["Montr\u00e9al", 7139373.7399999965, 64383], ["Qu\u00e9bec", 2612693.399999995, 27761], ["Laval", 1564786.4799999993, 14828], ["Gatineau", 1027723.4699999996, 8532], ["Longueuil", 868032.6699999995, 8252], ["Saguenay", 670070.4999999997, 6280], ["Sherbrooke", 619310.1699999999, 6252], ["Trois-Rivi\u00e8res", 538851.8599999998, 5338], ["L\u00e9vis", 454809.84999999986, 5067], ["Terrebonne", 379706.67000000004, 3665], ["Repentigny", 360634.77, 3355], ["Saint-Jean-sur-Richelieu", 346280.39, 3009]];
+const MULTI       = [["Gagnon, Michel", 7149.8099999999995, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party", "Avenir Saint-J\u00e9r\u00f4me - \u00c9quipe Martin Pigeon"]], ["Tremblay, Denis", 7050.0, ["\u00c9quipe Andr\u00e9e Bouchard", "Qu\u00e9bec solidaire", "M\u00e9tivier, Eddy", "Tremblay, Denis H.", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party"]], ["Bouchard, Pierre", 6517.42, ["Qu\u00e9bec forte et fi\u00e8re", "Qu\u00e9bec solidaire", "Bouchard, Pierre", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party", "Sherbrooke citoyen"]], ["Tremblay, Jacques", 6171.0, ["\u00c9quipe pour Saint-Jean", "\u00c9quipe Andr\u00e9e Bouchard", "Union nationale", "Parti conservateur du Qu\u00e9bec", "Tremblay, Jacques"]], ["Tremblay, Pierre", 5509.719999999999, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "Qu\u00e9bec forte et fi\u00e8re", "Parti conservateur du Qu\u00e9bec", "Tremblay, Michel", "Coalition avenir Qu\u00e9bec"]], ["Roy, Andr\u00e9", 5500.0, ["Coalition Longueuil - \u00c9quipe Catherine Fournier", "\u00c9quipe LaSalle Team", "Union nationale", "Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec"]], ["Ducharme, Pierre", 5045.0, ["Coalition avenir Qu\u00e9bec", "Ensemble Montr\u00e9al - \u00c9quipe Soraya", "Parti qu\u00e9b\u00e9cois", "Trudel, Luc"]], ["Roy, Michel", 5033.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Roy, Michel", "Coalition avenir Qu\u00e9bec", "Lemay, Jacques"]], ["Tremblay, Suzanne", 4954.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Girard, Manon", "ERD Saguenay", "Coalition avenir Qu\u00e9bec"]], ["Pelletier, Michel", 4936.3, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Parti libre", "Qu\u00e9bec d'abord", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party"]], ["Roy, Denis", 4875.0, ["Qu\u00e9bec solidaire", "Parti conservateur du Qu\u00e9bec", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party", "Brindamour, C\u00e9line", "Coalition avenir Qu\u00e9bec"]], ["Tremblay, Guy", 4844.0, ["Union nationale", "Qu\u00e9bec solidaire", "Projet Montr\u00e9al - \u00c9quipe Luc Rabouin", "F\u00e9lix Vincent Ardea", "Parti lib\u00e9ral du Qu\u00e9bec/Quebec Liberal Party"]]];
+
+const PARTY_COLORS = {
+  'PQ':  '#1a3a6b', 'CAQ': '#c0392b', 'PLQ': '#8B0000',
+  'QS':  '#c96a00', 'PCQ': '#555555', 'PM':  '#1d6b3b',
+  'EM':  '#1a3a6b', 'OTHER': '#888888'
+};
+
+function fmt(n) {
+  if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return '$' + (n/1000).toFixed(0) + 'k';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function shortParty(p) {
+  return p
+    .replace('/Quebec Liberal Party','')
+    .replace(' - Équipe Soraya','')
+    .replace(' - Équipe Luc Rabouin','')
+    .replace(' - Équipe Valérie Plante','')
+    .replace('Parti québécois','PQ')
+    .replace('Coalition avenir Québec','CAQ')
+    .replace('Parti libéral du Québec','PLQ')
+    .replace('Québec solidaire','QS')
+    .replace('Parti conservateur du Québec','PCQ')
+    .trim();
+}
+
+// ── PANEL SWITCHING ──
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'map' && !window.mapInit) initMap();
+}
+
+// ── MAP ──
+function initMap() {
+  window.mapInit = true;
+  const map = L.map('map', { center:[46.5, -72.5], zoom:6 });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap © CARTO', maxZoom:18
+  }).addTo(map);
+
+  const maxTotal = Math.max(...MAP_POINTS.map(p => p.total));
+
+  MAP_POINTS.forEach(pt => {
+    const color  = PARTY_COLORS[pt.top_party] || '#888';
+    const radius = Math.max(8, Math.sqrt(pt.total / maxTotal) * 55);
+    
+    const circle = L.circleMarker([pt.lat, pt.lng], {
+      radius, fillColor: color, color: '#fff',
+      weight: 1.5, fillOpacity: 0.75
+    }).addTo(map);
+
+    const breakdown = Object.entries(pt.parties)
+      .sort((a,b) => b[1]-a[1])
+      .slice(0,5)
+      .map(([p,v]) => `<span style="color:${PARTY_COLORS[p]||'#888'}">${p}</span> ${fmt(v)}`)
+      .join('<br>');
+
+    circle.bindPopup(`
+      <div class="map-popup">
+        <strong>${pt.fsa}</strong>
+        Total: <b>${fmt(pt.total)}</b> from ${pt.count.toLocaleString()} donations<br>
+        Leading party: <b style="color:${color}">${pt.top_party}</b><br><br>
+        ${breakdown}
+      </div>`, { maxWidth: 200 });
+  });
+}
+initMap();
+
+// ── PARTY BARS ──
+const maxP = PARTIES[0][1];
+const pBars = document.getElementById('partyBars');
+PARTIES.forEach(([name, total, count, level]) => {
+  const pct   = (total / maxP * 100).toFixed(1);
+  const short = shortParty(name);
+  const badge = level === 'provincial'
+    ? '<span class="badge prov">PROV</span>'
+    : '<span class="badge mun">MUN</span>';
+  const color = name.includes('québécois') && !name.includes('Projet') ? '#1a3a6b'
+    : name.includes('Coalition avenir') ? '#c0392b'
+    : name.includes('libéral') || name.includes('Liberal') ? '#8B0000'
+    : name.includes('solidaire') ? '#c96a00'
+    : name.includes('conservateur') ? '#555'
+    : name.includes('Projet Mont') ? '#1d6b3b'
+    : name.includes('Ensemble Mont') ? '#1a3a6b'
+    : '#888';
+  pBars.innerHTML += `
+    <div class="party-row">
+      <div class="party-header">
+        <div class="party-name">${short}${badge}</div>
+        <div class="party-meta">${fmt(total)} · ${count.toLocaleString()} donors</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+});
+
+// ── YEAR CHART ──
+const years = ['2019','2020','2021','2022','2023','2024','2025','2026'];
+const parties4 = ['PQ','CAQ','PLQ','QS'];
+const colors4  = ['#1a3a6b','#c0392b','#8B0000','#c96a00'];
+
+new Chart(document.getElementById('yearChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: parties4.map((p, i) => ({
+      label: p,
+      data: years.map(y => (YEAR_PARTY[y] && YEAR_PARTY[y][p]) || 0),
+      backgroundColor: colors4[i],
+      borderRadius: 2,
+    }))
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: {
+      legend: { position:'bottom', labels:{ font:{family:'DM Mono',size:10}, boxWidth:12 } },
+      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } }
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:{family:'DM Mono',size:10}} },
+      y: { grid:{color:'#e8e2d6'}, ticks:{font:{family:'DM Mono',size:10}, callback:v=>fmt(v)} }
+    }
+  }
+});
+
+// ── PARTY PIE ──
+const pieLabels = ['PQ','CAQ','PLQ','QS','PCQ','Other'];
+const pieTotals = [6773815, 5070181, 4068079, 2811112, 1413511, 2246512];
+new Chart(document.getElementById('partyPieChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: pieLabels,
+    datasets: [{ data: pieTotals, backgroundColor: ['#1a3a6b','#c0392b','#8B0000','#c96a00','#555','#aaa'], borderWidth:2, borderColor:'#f5f0e8' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: {
+      legend:{ position:'right', labels:{ font:{family:'DM Mono',size:11}, boxWidth:14 } },
+      tooltip:{ callbacks:{ label: c => ` ${c.label}: ${fmt(c.raw)} (${(c.raw/pieTotals.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)` } }
+    }
+  }
+});
+
+// ── CITIES ──
+const cityEl  = document.getElementById('cityList');
+const maxCity = CITIES[0][1];
+CITIES.forEach(([city, total]) => {
+  const pct = (total/maxCity*100).toFixed(1);
+  cityEl.innerHTML += `
+    <div class="city-row">
+      <span class="city-name">${city}</span>
+      <div class="city-bar"><div class="city-fill" style="width:${pct}%"></div></div>
+      <span class="city-amt">${fmt(total)}</span>
+    </div>`;
+});
+
+// ── MULTI PARTY ──
+const multiEl = document.getElementById('multiList');
+MULTI.forEach(([name, total, parties]) => {
+  multiEl.innerHTML += `
+    <div class="multi-row">
+      <div class="multi-name">${name}</div>
+      <div class="multi-meta">
+        <div class="multi-parties">${parties.slice(0,3).map(shortParty).join(' · ')}</div>
+        <div class="multi-amt">${fmt(total)}</div>
+      </div>
+    </div>`;
+});
+
+// ── DONORS ──
+const donorEl = document.getElementById('donorList');
+DONORS.forEach(([name, total, parties], i) => {
+  donorEl.innerHTML += `
+    <div class="donor-row">
+      <span class="d-rank">${i+1}</span>
+      <span class="d-name">${name}</span>
+      <span class="d-parties">${parties.slice(0,2).map(shortParty).join('<br>')}</span>
+      <span class="d-amount">${fmt(total)}</span>
+    </div>`;
+});
+
+// ── DONOR SIZE CHART ──
+new Chart(document.getElementById('donorChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['$50–100','$101–200','$201–300','$301–500','$501+'],
+    datasets: [{
+      label: 'Number of donors',
+      data: [89430, 124600, 31200, 18900, 4080],
+      backgroundColor: '#1a3a6b', borderRadius:2,
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.raw.toLocaleString()} donors` }} },
+    scales: {
+      x:{ grid:{display:false}, ticks:{font:{family:'DM Mono',size:11}} },
+      y:{ grid:{color:'#e8e2d6'}, ticks:{font:{family:'DM Mono',size:10}, callback:v=>v.toLocaleString()} }
+    }
+  }
+});
+
+// ── SEARCH ──
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if (q.length < 2) { el.innerHTML=''; return; }
+  const matches = DONORS.filter(([n]) => n.toLowerCase().includes(q)).slice(0,10);
+  if (!matches.length) {
+    el.innerHTML = '<div style="font-size:12px;color:#888;padding:8px 0;font-family:DM Mono,monospace">No match in top donors — full name search requires database</div>';
+    return;
+  }
+  el.innerHTML = matches.map(([n,t,ps]) => `
+    <div class="s-row">
+      <span class="s-name">${n}</span>
+      <span class="s-party">${ps.slice(0,2).map(shortParty).join(', ')}</span>
+      <span class="s-amt">${fmt(t)}</span>
+    </div>`).join('');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Vite
+*.local
+.vite/
+
+# Generated data — run `python scripts/preprocess.py` to regenerate
+# public/data.json is committed (80 KB) so the map works after clone
+public/search_donors.json
+
+# Raw CSV source files (29 MB combined — download from Élections Québec)
+# See README for download instructions
+contributions-pro-en.csv
+contributions-mun-en.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Optional: reference / planning files
+WHO_FUNDS_QUEBEC_CLAUDE_CODE.md
+"who_funds_quebec (1).html"
